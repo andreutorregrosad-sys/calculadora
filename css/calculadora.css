@@ -1,0 +1,851 @@
+/* =====================================================================
+   calculadora.css  -  Estilos de la calculadora
+   =====================================================================
+   ORDEN DEL ARCHIVO:
+     1. Reset y variables de color (tema oscuro / claro)
+     2. Fondo de estrellas y contenedor general
+     3. Botón de tema
+     4. Calculadora: pantalla e indicadores
+     5. Botones (base + un color por tipo de botón)
+     6. Panel de historial
+     7. Panel del conversor de bases
+     8. Responsive (tablets y móviles)
+     9. Scrollbar personalizada
+   CONSEJO: para cambiar colores del tema, edita primero las variables de :root
+   y de body.light-mode.
+   ===================================================================== */
+
+
+/* RESET GLOBAL: quita márgenes y rellenos por defecto del navegador, hace que el padding
+   cuente dentro del ancho (border-box) y define la tipografía de toda la página.
+*/
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, ubuntu;
+}
+
+/* VARIABLES DE COLOR (tema OSCURO, el de por defecto).
+   Se usan en el resto del CSS con var(--nombre). Cambiar un color aquí lo cambia en toda la app.
+   --primary-bg: fondo de la página | --calc-bg: tarjeta de la calculadora
+   --display-bg / --display-text: fondo y texto de la pantalla
+   --btn-bg / --btn-text / --btn-hover: botones normales | --text-shadow: brillo del texto */
+:root {
+  --primary-bg: linear-gradient(135deg, #a000ff 0%, #6a00b8 100%);
+  --calc-bg: #1e1e24;
+  --display-bg: #111115;
+  --display-text: #00ffcc;
+  --btn-bg: #2a2a35;
+  --btn-text: #ffffff;
+  --btn-hover: #3a3a4a;
+  --text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
+}
+
+/* TEMA CLARO: redefine las mismas variables. El JS pone o quita la clase 'light-mode' en <body>
+   al pulsar el botón del tema, y todo cambia de color automáticamente. */
+body.light-mode {
+  --primary-bg: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  --calc-bg: #FFFFFF;
+  --display-bg: #F5F5F5;
+  --display-text: #333333;
+  --btn-bg: #E0E0E0;
+  --btn-text: #000000;
+  --btn-hover: #D0D0D0;
+  --text-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* BODY: centra la calculadora en la pantalla (flex), aplica el fondo degradado
+   y deja scroll vertical pero oculta el horizontal. */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--primary-bg);
+  padding: 20px;
+  transition: background 0.3s ease;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ESTRELLAS DE FONDO (decoración): capa que cubre toda la ventana (fixed) con puntos dorados
+   que parpadean. pointer-events:none evita que bloquee los clics; z-index:1 la deja detrás del contenido. */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #FFD700, rgba(255, 215, 0, 0)),
+    radial-gradient(2px 2px at 60px 70px, #FFD700, rgba(255, 215, 0, 0)),
+    radial-gradient(1px 1px at 50px 50px, #FFD700, rgba(255, 215, 0, 0)),
+    radial-gradient(1px 1px at 130px 80px, #FFD700, rgba(255, 215, 0, 0)),
+    radial-gradient(2px 2px at 90px 10px, #FFD700, rgba(255, 215, 0, 0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: twinkle 5s infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Estrellas del modo claro: mismos puntos pero en tonos morados. */
+body.light-mode::before {
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #9B59B6, rgba(155, 89, 182, 0)),
+    radial-gradient(2px 2px at 60px 70px, #9B59B6, rgba(155, 89, 182, 0)),
+    radial-gradient(1px 1px at 50px 50px, #9B59B6, rgba(155, 89, 182, 0)),
+    radial-gradient(1px 1px at 130px 80px, #9B59B6, rgba(155, 89, 182, 0)),
+    radial-gradient(2px 2px at 90px 10px, #9B59B6, rgba(155, 89, 182, 0)),
+    radial-gradient(1px 1px at 150px 120px, #8E44AD, rgba(142, 68, 173, 0)),
+    radial-gradient(2px 2px at 40px 120px, #8E44AD, rgba(142, 68, 173, 0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: twinkle 5s infinite;
+}
+
+/* Pone el contenido (.container) por encima de las estrellas (z-index 2 > 1). */
+body > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ANIMACIÓN 'twinkle': la opacidad de las estrellas sube y baja (efecto parpadeo). */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* CONTENEDOR PRINCIPAL: coloca en fila la calculadora y los paneles laterales
+   (conversor de bases e historial) con 20px de separación. */
+.container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  z-index: 10;
+}
+
+/* Zona del botón de tema: fija en la esquina superior derecha, siempre visible. */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+/* BOTÓN DE TEMA: círculo semitransparente con el icono ☀️ / 🌙. */
+.theme-btn {
+  width: 50px;
+  height: 50px;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5em;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Al pasar el ratón: se aclara y crece un 10%. */
+.theme-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* TARJETA DE LA CALCULADORA: caja oscura con esquinas redondeadas y sombra.
+   max-width 400px; en pantallas pequeñas ocupa todo el ancho disponible. */
+.calculator {
+  background-color: var(--calc-bg);
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  max-width: 400px;
+  transition: all 0.3s ease;
+}
+
+/* Bloque de la pantalla. position:relative permite colocar dentro el indicador de notación. */
+.display-section {
+  position: relative;
+  margin-bottom: 22px;
+}
+
+/* INDICADOR DE PARÉNTESIS (ej. '( × 2' = faltan 2 por cerrar). Va encima de la pantalla.
+   Está oculto con visibility (no con display) para reservar su hueco y que nada salte al aparecer.
+   El JS lo muestra cuando hace falta. */
+.parenthesis-indicator {
+  font-size: 0.8em;
+  color: var(--display-text);
+  height: 16px;
+  margin-bottom: 4px;
+  visibility: hidden;
+  opacity: 0.7;
+}
+
+/* ETIQUETA 'Científica': texto pequeño en la esquina superior derecha de la pantalla.
+   Oculta por defecto; el JS la muestra al activar el botón E. */
+.notation-indicator {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 0.7em;
+  color: var(--display-text);
+  opacity: 0.6;
+  display: none;
+}
+
+/* PANTALLA: campo de texto (solo lectura) con texto alineado a la derecha, fuente grande,
+   fondo oscuro y sombra interior. Si el texto es largo se corta (overflow hidden). */
+.display {
+  width: 100%;
+  height: 75px;
+  text-align: right;
+  font-size: 2.2em;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 12px;
+  background-color: var(--display-bg);
+  color: var(--display-text);
+  text-shadow: var(--text-shadow);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+  cursor: default;
+}
+
+/* Quita el contorno que el navegador dibuja al seleccionar la pantalla. */
+.display:focus {
+  outline: none;
+}
+
+/* REJILLA DE BOTONES: 5 columnas iguales con 10px de separación.
+   Cada 5 botones forman una fila; el '=' y el botón BASE ocupan las 5 columnas. */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+/* ESTILO BASE de TODOS los botones: tamaño, esquinas, sombra y transición suave.
+   text-transform:uppercase pone el texto en mayúsculas (sin -> SIN).
+   Los estilos de colores de más abajo sobrescriben solo lo que cambian. */
+.buttons button {
+  height: 50px;
+  font-size: 1.1em;
+  border: none;
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.18);
+  text-transform: uppercase;
+}
+
+/* π y e no se pasan a mayúsculas (la 'e' en mayúscula sería una 'E' distinta). */
+.buttons .btn-pi,
+/* BOTÓN e (número de Euler): verde azulado. */
+.buttons .btn-euler {
+  text-transform: none;
+}
+
+/* HOVER de cualquier botón: se aclara y sube 2px. */
+.buttons button:hover {
+  background-color: var(--btn-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* Al hacer clic: el botón baja 1px (efecto de pulsación). */
+.buttons button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* BOTÓN '=': ocupa toda la fila (grid-column 1 / -1), degradado turquesa y más alto.
+   Incluye su :hover y su versión del modo claro (rojo) justo debajo. */
+.buttons .equals {
+  grid-column: 1 / -1;
+  background: linear-gradient(90deg, #00ffcc 0%, #00bfff 100%);
+  color: #111115;
+  font-size: 1.3em;
+  height: 60px;
+}
+
+.buttons .equals:hover {
+  background: linear-gradient(90deg, #00ecc2 0%, #00aee3 100%);
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+}
+
+body.light-mode .buttons .equals {
+  background: linear-gradient(90deg, #FF6B6B 0%, #FF8E8E 100%);
+  color: #FFFFFF;
+}
+
+body.light-mode .buttons .equals:hover {
+  background: linear-gradient(90deg, #FF8585 0%, #FFA5A5 100%);
+}
+
+/* BOTÓN 📋 COPIAR: naranja. (Variantes :hover y modo claro debajo.) */
+.buttons .btn-copy {
+  background: linear-gradient(90deg, #f39c12 0%, #e67e22 100%);
+  color: #111115;
+}
+
+.buttons .btn-copy:hover {
+  background: linear-gradient(90deg, #f5b041 0%, #eb984e 100%);
+}
+
+body.light-mode .buttons .btn-copy {
+  background: linear-gradient(90deg, #FF9500 0%, #FF7F00 100%);
+  color: #FFFFFF;
+}
+
+body.light-mode .buttons .btn-copy:hover {
+  background: linear-gradient(90deg, #FFB000 0%, #FF9000 100%);
+}
+
+/* BOTÓN 📜 HISTORIAL: azul. Abre y cierra el panel del historial. */
+.buttons .btn-history {
+  background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);
+  color: white;
+}
+
+.buttons .btn-history:hover {
+  background: linear-gradient(90deg, #5dade2 0%, #2e86c1 100%);
+}
+
+body.light-mode .buttons .btn-history {
+  background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);
+  color: white;
+}
+
+/* BOTÓN Φ (número áureo): naranja oscuro. */
+.buttons .btn-fi {
+  background-color: #FF8C00;
+  color: #111111;
+}
+
+.buttons .btn-fi:hover {
+  background-color: #ff9f2d;
+}
+
+body.light-mode .buttons .btn-fi {
+  background-color: #FF8C00;
+  color: #FFFFFF;
+}
+
+body.light-mode .buttons .btn-fi:hover {
+  background-color: #ff9f2d;
+}
+
+/* BOTÓN π: morado. */
+.buttons .btn-pi {
+  background-color: #8E44AD;
+  color: #ffffff;
+}
+
+.buttons .btn-pi:hover {
+  background-color: #9b59b6;
+}
+
+body.light-mode .buttons .btn-pi {
+  background-color: #8E44AD;
+  color: #FFFFFF;
+}
+
+body.light-mode .buttons .btn-pi:hover {
+  background-color: #9b59b6;
+}
+
+.buttons .btn-euler {
+  background-color: #1ABC9C;
+  color: #0b3b34;
+}
+
+.buttons .btn-euler:hover {
+  background-color: #48c9b0;
+}
+
+body.light-mode .buttons .btn-euler {
+  background-color: #1ABC9C;
+  color: #FFFFFF;
+}
+
+body.light-mode .buttons .btn-euler:hover {
+  background-color: #48c9b0;
+}
+
+/* BOTÓN E (notación científica): rojo. */
+.buttons .btn-notation {
+  background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+}
+
+.buttons .btn-notation:hover {
+  background: linear-gradient(90deg, #ec7063 0%, #cb4335 100%);
+}
+
+/* BOTÓN ∞ (infinito): negro con letra dorada y borde brillante.
+   En modo claro se invierte: fondo blanco y borde negro. */
+.buttons .btn-inf {
+  background: linear-gradient(90deg, #000000 0%, #222222 100%);
+  color: #FFD700;
+  border: 1px solid #ffffff;
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.35);
+}
+
+.buttons .btn-inf:hover {
+  background: linear-gradient(90deg, #111111 0%, #2a2a2a 100%);
+  color: #FFD700;
+  box-shadow: 0 0 24px rgba(255, 215, 0, 0.45);
+}
+
+body.light-mode .buttons .btn-inf {
+  background: linear-gradient(90deg, #FFFFFF 0%, #F0F0F0 100%);
+  color: #FFD700;
+  border: 2px solid #000000;
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.35);
+}
+
+body.light-mode .buttons .btn-inf:hover {
+  background: linear-gradient(90deg, #F5F5F5 0%, #EBEBEB 100%);
+  color: #FFD700;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+}
+
+/* BOTONES ESPECIALES grises con letra turquesa: ! % √ (clase btn-spec).
+   btn-frac no se usa en el HTML actual (se puede borrar sin problema). */
+.buttons .btn-frac,
+.buttons .btn-spec {
+  background-color: #4a4a5a;
+  color: #00ffcc;
+}
+
+.buttons .btn-frac:hover,
+.buttons .btn-spec:hover {
+  background-color: #5a5a6a;
+}
+
+body.light-mode .buttons .btn-frac,
+body.light-mode .buttons .btn-spec {
+  background-color: #CCCCCC;
+  color: #0099AA;
+}
+
+body.light-mode .buttons .btn-frac:hover,
+body.light-mode .buttons .btn-spec:hover {
+  background-color: #BBBBBB;
+}
+
+/* BOTÓN ⌫ (borrar último carácter): rojo. */
+.buttons .btn-backspace {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.buttons .btn-backspace:hover {
+  background-color: #ff6b5b;
+}
+
+body.light-mode .buttons .btn-backspace {
+  background-color: #e74c3c;
+  color: white;
+}
+
+body.light-mode .buttons .btn-backspace:hover {
+  background-color: #ff6b5b;
+}
+
+/* BOTÓN C (borrar todo): verde. */
+.buttons .btn-clear {
+  background-color: #27ae60;
+  color: white;
+}
+
+.buttons .btn-clear:hover {
+  background-color: #2ecc71;
+}
+
+body.light-mode .buttons .btn-clear {
+  background-color: #27ae60;
+  color: white;
+}
+
+body.light-mode .buttons .btn-clear:hover {
+  background-color: #2ecc71;
+}
+
+/* BOTÓN / (dividir): naranja. */
+.buttons .btn-div {
+  background-color: #f39c12;
+  color: #111115;
+}
+
+.buttons .btn-div:hover {
+  background-color: #f1c40f;
+}
+
+body.light-mode .buttons .btn-div {
+  background-color: #f39c12;
+  color: #FFFFFF;
+}
+
+body.light-mode .buttons .btn-div:hover {
+  background-color: #f1c40f;
+}
+
+/* Historial */
+/* PANEL DEL HISTORIAL: tarjeta lateral oculta por defecto (display:none).
+   Con scroll vertical si hay muchas operaciones (max-height 600px). */
+.history-panel {
+  background-color: var(--calc-bg);
+  padding: 20px;
+  border-radius: 24px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  max-width: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  display: none;
+  transition: all 0.3s ease;
+}
+
+/* Cuando el JS le añade la clase 'show', el panel se hace visible. */
+.history-panel.show {
+  display: block;
+}
+
+/* Cabecera del historial: título a la izquierda y botón 'Limpiar' a la derecha. */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  color: var(--display-text);
+}
+
+/* Tamaño del título 'Historial'. */
+.history-header h3 {
+  font-size: 1.1em;
+}
+
+/* Botón rojo 'Limpiar' (borra el historial). Con su :hover justo debajo. */
+.btn-clear-history {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: all 0.2s ease;
+}
+
+.btn-clear-history:hover {
+  background-color: #ff6b5b;
+}
+
+/* Lista vertical que contiene las operaciones guardadas (las crea el JS). */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* CADA OPERACIÓN del historial: tarjeta de una línea; si es larga se corta con '...'.
+   Al hacer clic el JS recupera ese resultado en la pantalla. */
+.history-item {
+  background-color: var(--btn-bg);
+  color: var(--display-text);
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Al pasar el ratón: se aclara, se desplaza 5px y aparece una barra turquesa a la izquierda. */
+.history-item:hover {
+  background-color: var(--btn-hover);
+  border-left-color: #00ffcc;
+  transform: translateX(5px);
+}
+
+/* Misma barra pero roja en modo claro. */
+body.light-mode .history-item:hover {
+  border-left-color: #FF6B6B;
+}
+
+/* Conversor de bases */
+/* BOTÓN 'BASE' (dentro de la rejilla de botones): ocupa las 5 columnas, color morado.
+   Abre y cierra el panel del conversor de bases. */
+.buttons .btn-base {
+  grid-column: 1 / -1;
+  height: 44px;
+  background: linear-gradient(90deg, #9b59b6 0%, #6c3483 100%);
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+.buttons .btn-base:hover {
+  background: linear-gradient(90deg, #af7ac5 0%, #7d3c98 100%);
+}
+
+/* PANEL DEL CONVERSOR DE BASES: tarjeta lateral, oculta por defecto, igual que el historial
+   pero más ancha (340px). */
+.base-panel {
+  background-color: var(--calc-bg);
+  color: var(--display-text);
+  padding: 20px;
+  border-radius: 24px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  max-width: 340px;
+  max-height: 600px;
+  overflow-y: auto;
+  display: none;
+}
+
+/* El JS añade la clase 'show' para mostrar el panel. */
+.base-panel.show {
+  display: block;
+}
+
+/* Título 'Conversor de bases'. */
+.base-panel h3 {
+  font-size: 1.1em;
+  margin-bottom: 12px;
+}
+
+/* CAMPO con etiqueta ('Número', 'Base del número'): etiqueta arriba y el control debajo. */
+.base-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 0.85em;
+}
+
+/* ESTILO de la caja de texto y del desplegable del conversor: fondo oscuro, texto turquesa
+   y fuente monoespaciada (cada dígito ocupa el mismo ancho, ideal para binario y hex). */
+.base-panel input,
+.base-panel select {
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--display-bg);
+  color: var(--display-text);
+  font-size: 1em;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+/* Contorno morado cuando se hace clic en la caja o en el desplegable. */
+.base-panel input:focus,
+.base-panel select:focus {
+  outline: 2px solid #9b59b6;
+}
+
+/* Fila con los dos botones 'Usar pantalla' y 'Enviar a pantalla', repartidos a partes iguales. */
+.base-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* Estilo de esos dos botones (gris, esquinas redondeadas). Con su :hover justo debajo. */
+.base-actions button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.base-actions button:hover {
+  background-color: var(--btn-hover);
+}
+
+/* ZONA DE ERROR: mensaje rojo (ej. dígito no válido). Reserva su altura para que no salte el diseño. */
+.base-error {
+  min-height: 1.2em;
+  margin-bottom: 8px;
+  font-size: 0.8em;
+  color: #e74c3c;
+}
+
+/* CADA FILA DE RESULTADO (Binario, Octal, Decimal, Hexadecimal). Al hacer clic se copia el valor. */
+.base-row {
+  background-color: var(--btn-bg);
+  padding: 9px 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+/* Hover de la fila: se aclara y aparece una barra morada a la izquierda. */
+.base-row:hover {
+  background-color: var(--btn-hover);
+  border-left-color: #9b59b6;
+}
+
+/* Nombre pequeño de la fila (ej. 'Binario (2)'). */
+.base-row .base-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75em;
+  opacity: 0.75;
+  margin-bottom: 2px;
+}
+
+/* VALOR convertido, en fuente monoespaciada. word-break:break-all parte los números muy largos
+   para que no se salgan del panel. */
+.base-row .base-value {
+  font-family: 'Consolas', 'Courier New', monospace;
+  word-break: break-all;
+  min-height: 1.2em;
+}
+
+/* Responsividad */
+/* RESPONSIVE - TABLETS Y MÓVILES (pantalla de 768px o menos).
+   Los paneles pasan a colocarse debajo de la calculadora y los elementos se hacen algo más pequeños. */
+@media (max-width: 768px) {
+  /* Apila calculadora y paneles en columna en vez de en fila. */
+  .container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Menos relleno y ancho máximo de 350px. */
+  .calculator {
+    padding: 20px;
+    width: 100%;
+    max-width: 350px;
+  }
+
+  /* Se mantienen 5 columnas pero con menos separación. */
+  .buttons {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  /* Botones algo más bajos y con letra más pequeña. */
+  .buttons button {
+    height: 45px;
+    font-size: 1em;
+  }
+
+  /* Pantalla más baja y con letra más pequeña. */
+  .display {
+    height: 65px;
+    font-size: 1.8em;
+  }
+
+  /* Historial y conversor ocupan todo el ancho disponible. */
+  .history-panel,
+  .base-panel {
+    max-width: 100%;
+  }
+
+  /* Botón de tema más pequeño. */
+  .theme-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2em;
+  }
+}
+
+/* RESPONSIVE - MÓVILES PEQUEÑOS (480px o menos). Ajustes más agresivos sobre lo anterior. */
+@media (max-width: 480px) {
+  /* Menos margen alrededor de la página. */
+  body {
+    padding: 10px;
+  }
+
+  /* La calculadora usa todo el ancho y menos relleno. */
+  .calculator {
+    padding: 15px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Sigue en 5 columnas (cada fila tiene 5 botones; con 4 se descolocaría) y menos separación. */
+  .buttons {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  /* Botones aún más compactos. */
+  .buttons button {
+    height: 40px;
+    font-size: 0.9em;
+  }
+
+  /* Pantalla más compacta. */
+  .display {
+    height: 55px;
+    font-size: 1.5em;
+    padding: 10px;
+  }
+
+  /* El historial limita su altura a 400px. */
+  .history-panel {
+    max-height: 400px;
+  }
+
+  /* Botón de tema más pequeño y más pegado a la esquina. */
+  .theme-btn {
+    width: 35px;
+    height: 35px;
+    top: 10px;
+    right: 10px;
+    font-size: 1em;
+  }
+}
+
+/* Scroll personalizado para historial */
+/* BARRA DE SCROLL personalizada del historial (solo Chrome, Edge, Safari): ancho, carril y
+   'pulgar' turquesa (rojo en modo claro). Las reglas siguientes son su carril, su pulgar y sus hover. */
+.history-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-panel::-webkit-scrollbar-track {
+  background: var(--btn-bg);
+  border-radius: 10px;
+}
+
+.history-panel::-webkit-scrollbar-thumb {
+  background: #00ffcc;
+  border-radius: 10px;
+}
+
+.history-panel::-webkit-scrollbar-thumb:hover {
+  background: #00bfff;
+}
+
+body.light-mode .history-panel::-webkit-scrollbar-thumb {
+  background: #FF6B6B;
+}
+
+body.light-mode .history-panel::-webkit-scrollbar-thumb:hover {
+  background: #FF8585;
+}

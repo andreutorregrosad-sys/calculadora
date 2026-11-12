@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<!--
+  =====================================================================
+  CALCULADORA.html  -  Estructura (lo que se ve) de la calculadora
+  =====================================================================
+  ARCHIVOS QUE USA (deben estar en estas carpetas):
+      CALCULADORA.html
+      css/calculadora.css   -> colores, tamaños y animaciones
+      js/calculadora.js     -> toda la lógica (cálculo, historial, bases, tema)
+
+  CÓMO SE CONECTA TODO:
+    - class="..."  -> el CSS usa las clases para dar estilo.
+    - id="..."     -> el JS usa los ids para encontrar y modificar elementos.
+    - onclick="..."-> al pulsar el botón se ejecuta esa función, que debe existir en el JS.
+
+  IDs QUE EL JS NECESITA:
+      themeBtn, display, parenIndicator, notationIndicator, infinityBtn,
+      basePanel, baseInput, baseFrom, baseError, outBin, outOct, outDec, outHex,
+      historyPanel, historyList
+
+  FUNCIONES QUE EL JS DEBE DEFINIR (las llaman los onclick):
+      appendToken(x), appendFunction(nombre), appendFactorial(), appendPercentage(),
+      appendSqrt(), appendInfinity(), toggleScientificNotation(), backspace(),
+      clearDisplay(), calculate(), copyResult(), toggleHistory(), clearHistory(),
+      toggleBase(), baseFromDisplay(), baseToDisplay()
+  =====================================================================
+-->
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <!-- Hace que la página se adapte al ancho del móvil -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Título que aparece en la pestaña del navegador -->
+  <title>Calculadora Pro</title>
+  <!-- Carga los estilos desde la carpeta css/ -->
+  <link rel="stylesheet" href="css/calculadora.css">
+</head>
+<body>
+  <!-- CONTENEDOR GENERAL: coloca la calculadora y los paneles laterales uno junto al otro -->
+  <div class="container">
+
+    <!-- BOTÓN DE TEMA: cambia entre modo oscuro y claro (el JS cambia el icono y la clase light-mode del body) -->
+    <div class="theme-toggle">
+      <button id="themeBtn" class="theme-btn" aria-label="Cambiar tema">🌙</button>
+    </div>
+
+    <!-- ================= CALCULADORA ================= -->
+    <div class="calculator">
+
+      <!-- PANTALLA -->
+      <div class="display-section">
+        <!-- Aviso de paréntesis sin cerrar, ej. "( × 2" (lo rellena el JS) -->
+        <div class="parenthesis-indicator" id="parenIndicator"></div>
+        <!-- Pantalla principal: muestra lo que escribes y el resultado.
+             readonly = no se puede escribir a mano (se usan los botones o el teclado);
+             tabindex="-1" = el tabulador no se detiene aquí -->
+        <input type="text" class="display" id="display" value="0" readonly tabindex="-1" aria-label="Pantalla">
+        <!-- Etiqueta "Científica" cuando la notación científica está activada (lo gestiona el JS) -->
+        <div class="notation-indicator" id="notationIndicator"></div>
+      </div>
+
+      <!-- REJILLA DE BOTONES: 5 columnas; cada 5 botones = una fila -->
+      <div class="buttons">
+
+        <!-- Fila 1: constantes, notación científica y borrar -->
+        <!-- Φ = número áureo (1,618...) -->
+        <button onclick="appendToken('Φ')" class="btn-fi">Φ</button>
+        <!-- π = pi (3,1415...) -->
+        <button onclick="appendToken('π')" class="btn-pi">π</button>
+        <!-- e = número de Euler (2,718...) -->
+        <button onclick="appendToken('e')" class="btn-euler">e</button>
+        <!-- E = activa/desactiva la notación científica (ej. 1,5×10^7) -->
+        <button onclick="toggleScientificNotation()" class="btn-notation">E</button>
+        <!-- ⌫ = borra el último carácter (las funciones como sin( se borran enteras) -->
+        <button onclick="backspace()" class="btn-backspace">⌫</button>
+
+        <!-- Fila 2: funciones (seno, coseno, tangente, logaritmo decimal, logaritmo neperiano) -->
+        <button onclick="appendFunction('sin')">sin</button>
+        <button onclick="appendFunction('cos')">cos</button>
+        <button onclick="appendFunction('tan')">tan</button>
+        <button onclick="appendFunction('log')">log</button>
+        <button onclick="appendFunction('ln')">ln</button>
+
+        <!-- Fila 3: 1 2 3, suma y abrir paréntesis -->
+        <button onclick="appendToken('1')">1</button>
+        <button onclick="appendToken('2')">2</button>
+        <button onclick="appendToken('3')">3</button>
+        <button onclick="appendToken('+')">+</button>
+        <button onclick="appendToken('(')">(</button>
+
+        <!-- Fila 4: 4 5 6, resta y cerrar paréntesis -->
+        <button onclick="appendToken('4')">4</button>
+        <button onclick="appendToken('5')">5</button>
+        <button onclick="appendToken('6')">6</button>
+        <button onclick="appendToken('-')">-</button>
+        <button onclick="appendToken(')')">)</button>
+
+        <!-- Fila 5: 7 8 9, multiplicar y potencia -->
+        <button onclick="appendToken('7')">7</button>
+        <button onclick="appendToken('8')">8</button>
+        <button onclick="appendToken('9')">9</button>
+        <button onclick="appendToken('×')">×</button>
+        <button onclick="appendToken('^')">^</button>
+
+        <!-- Fila 6: factorial (!), porcentaje (%), 0, punto decimal y raíz cuadrada -->
+        <button onclick="appendFactorial()" class="btn-spec">!</button>
+        <button onclick="appendPercentage()" class="btn-spec">%</button>
+        <button onclick="appendToken('0')">0</button>
+        <button onclick="appendToken('.')">.</button>
+        <button onclick="appendSqrt()" class="btn-spec">√</button>
+
+        <!-- Fila 7: acciones -->
+        <!-- C = borra todo -->
+        <button onclick="clearDisplay()" class="btn-clear">C</button>
+        <!-- / = dividir -->
+        <button onclick="appendToken('/')" class="btn-div">/</button>
+        <!-- 📋 = copia el contenido de la pantalla al portapapeles -->
+        <button onclick="copyResult()" class="btn-copy">📋</button>
+        <!-- 📜 = muestra u oculta el panel del historial -->
+        <button onclick="toggleHistory()" class="btn-history">📜</button>
+        <!-- ∞ = escribe el símbolo de infinito -->
+        <button onclick="appendInfinity()" id="infinityBtn" class="btn-inf">∞</button>
+
+        <!-- BASE = muestra u oculta el panel del conversor de bases (ocupa las 5 columnas) -->
+        <button onclick="toggleBase()" class="btn-base">BASE · bin / oct / dec / hex</button>
+        <!-- = calcula el resultado (ocupa las 5 columnas) -->
+        <button onclick="calculate()" class="equals">=</button>
+      </div>
+    </div>
+
+    <!-- ================= CONVERSOR DE BASES ================= -->
+    <!-- Panel lateral oculto por defecto; el JS le añade la clase "show" para verlo -->
+    <div class="base-panel" id="basePanel">
+      <h3>Conversor de bases</h3>
+
+      <!-- Aquí escribes el número a convertir -->
+      <label class="base-field">Número
+        <input type="text" id="baseInput" placeholder="Ej: 1010, FF, 255" autocomplete="off" spellcheck="false">
+      </label>
+      <!-- Desplegable con la base en la que está escrito el número (el JS rellena las opciones:
+           binario, octal, decimal, hexadecimal) -->
+      <label class="base-field">Base del número
+        <select id="baseFrom"></select>
+      </label>
+
+      <!-- Botones del conversor -->
+      <div class="base-actions">
+        <!-- Coge el valor que hay en la pantalla de la calculadora y lo pone en el conversor -->
+        <button onclick="baseFromDisplay()">Usar pantalla</button>
+        <!-- Lleva el valor convertido (en decimal) a la pantalla de la calculadora -->
+        <button onclick="baseToDisplay()">Enviar a pantalla</button>
+      </div>
+
+      <!-- Mensaje de error rojo (ej. "dígito no válido en esta base") -->
+      <div class="base-error" id="baseError"></div>
+
+      <!-- RESULTADOS: una fila por base. Al hacer clic en una fila se copia su valor.
+           data-out indica qué base es; el valor se escribe en el div con su id (outBin, outOct, outDec, outHex) -->
+      <div class="base-row" data-out="bin" title="Clic para copiar">
+        <div class="base-label">Binario (2)</div>
+        <div class="base-value" id="outBin"></div>
+      </div>
+      <div class="base-row" data-out="oct" title="Clic para copiar">
+        <div class="base-label">Octal (8)</div>
+        <div class="base-value" id="outOct"></div>
+      </div>
+      <div class="base-row" data-out="dec" title="Clic para copiar">
+        <div class="base-label">Decimal (10)</div>
+        <div class="base-value" id="outDec"></div>
+      </div>
+      <div class="base-row" data-out="hex" title="Clic para copiar">
+        <div class="base-label">Hexadecimal (16)</div>
+        <div class="base-value" id="outHex"></div>
+      </div>
+    </div>
+
+    <!-- ================= HISTORIAL ================= -->
+    <!-- Panel lateral oculto por defecto; el botón 📜 lo muestra -->
+    <div class="history-panel" id="historyPanel">
+      <div class="history-header">
+        <h3>Historial</h3>
+        <!-- Borra todas las operaciones guardadas -->
+        <button onclick="clearHistory()" class="btn-clear-history">Limpiar</button>
+      </div>
+      <!-- Aquí el JS añade una línea por cada operación (ej. "2+6 = 8") -->
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- Carga la lógica. Va al final del body para que los elementos de arriba ya existan
+       cuando el JS los busque por su id -->
+  <script src="js/calculadora.js"></script>
+</body>
+</html>
